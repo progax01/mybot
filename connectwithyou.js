@@ -25,28 +25,36 @@ bot.onText(/\/start/, (msg) => {
 bot.onText(/Register/, (msg) => {
   const chatId = msg.chat.id;
   // Handle the registration process here
-   
-  const userDetails = msg.text.split(',').map((item) => item.trim());
-  if (userDetails.length === 3) {
-      const [name, email, phone] = userDetails;
-      userData[chatId] = { name, email, phone };
-      bot.sendMessage(chatId, 'Registration successful! You can now use Option 2 to view your details.');
-      bot.state[chatId] = states.MENU;
-  } else {
-      bot.sendMessage(chatId, 'Invalid format. Please enter your details in the format Register keyword with "Name, Email, Phone"');
-  }
+  bot.sendMessage(chatId, 'Please enter your name:');
+  bot.once('message', (message) => {
+    const userId = message.from.id;
+    userData[userId] = { name: message.text };
+    bot.sendMessage(chatId, 'Please enter your email:');
+    bot.once('message', (message) => {
+      userData[userId].email = message.text;
+      bot.sendMessage(chatId, 'Please enter your phone number:');
+      bot.once('message', (message) => {
+        userData[userId].phone = message.text;
+        bot.sendMessage(
+          chatId,
+          'Thank you for registering! Your registration is complete.'
+        );
+      });
+    });
+  }); 
+  
 });
 
 // View Details option handler
 bot.onText(/View Details/, (msg) => {
   const chatId = msg.chat.id;
   // Handle the view details process here
-
-  if (userData[chatId]) {
-    const userDetails = userData[chatId];
+ const userId = msg.from.id;
+ const userDetails = userData[userId];
+  if (userDetails) {
     bot.sendMessage(chatId, `User Details:\nName: ${userDetails.name}\nEmail: ${userDetails.email}\nPhone: ${userDetails.phone}`);
 } else {
-    bot.sendMessage(chatId, 'You selected Option 2, but you have not registered yet.');
+    bot.sendMessage(chatId, 'You have not registered yet. Register Now!');
 }
 
 });
