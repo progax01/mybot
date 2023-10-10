@@ -122,13 +122,30 @@ async function checkForNewERC20Tokens() {
   for (const tx of block.transactions) {
     const txReceipt = await web3.eth.getTransactionReceipt(tx.hash);
 
-    // Check if the transaction is a contract creation and the contract is an ERC20 token
-    if (tx.to === null && txReceipt.contractAddress) {
-      // Send a notification message with the contract address
+    if (tx.to === null && txReceipt.contractAddress  && await isERC20Token(txReceipt.contractAddress)) {
+      console.log(txReceipt.contractAddress);
+
       bot.sendMessage(chatId, `New ERC20 token deployed!\nContract Address: ${txReceipt.contractAddress}`);
     }
   }
+
 }
+
+async function isERC20Token(contractAddress) {
+
+  const contractABI = await web3.eth.getCode(contractAddress);
+
+  
+  const ERC20TokenFunctions = ["balanceOf", "transfer", "allowance", "approve", "totalSupply"];
+  for (const functionName of ERC20TokenFunctions) {
+    if (!contractABI.includes(functionName)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
   setInterval(checkForNewERC20Tokens, 60000); // Check every 1 minute
 
   console.log('Bot is running and monitoring Sepolia blockchain for new ERC20 tokens...');
