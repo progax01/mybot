@@ -90,57 +90,107 @@ bot.onText(/Check Ethereum Balance/, (msg) => {
   });
 });
 
+
 bot.onText(/Track ERC20/, (msg) => {
   const chatId = msg.chat.id;
   bot.sendMessage(chatId, "Start tracking ERC20 Token deployment");
 
-  async function checkForNewERC20Tokens() {
-    const latestBlockNumber = await web3.eth.getBlockNumber();
-    console.log("block");
-    const block = await web3.eth.getBlock(latestBlockNumber, true);
+async function checkForNewERC20Tokens() {
+  const latestBlockNumber = await web3.eth.getBlockNumber();
+  console.log("block")
+  const block = await web3.eth.getBlock(latestBlockNumber, true);
 
-    if (!block || !block.transactions) {
-      return;
-    }
-
-    // Iterate through the transactions in the latest block
-    for (const tx of block.transactions) {
-      const txReceipt = await web3.eth.getTransactionReceipt(tx.hash);
-
-      let  isERC20Token = false;
-
-      // Get the contract code
-    const contractCode = await web3.eth.getCode(txReceipt.contractAddress);
-
-// Decode the contract code into an ABI object
-    const contractABI = JSON.parse(web3.utils.decodeABI(contractCode));
-
-     
-
-      const ERC20TokenFunctions = ["balanceOf", "transfer","allowance","approve","totalSupply",];
-
-      for (const functionName of ERC20TokenFunctions) {
-        if (!contractABI.includes(functionName)) {
-          isERC20Token = false;
-        } else {
-          isERC20Token = true;
-        }
- }
-        if (tx.to === null && txReceipt.contractAddress && isERC20Token)
-      {
-          console.log(txReceipt.contractAddress);
-
-          bot.sendMessage(chatId,`New ERC20 token deployed!\nContract Address: ${txReceipt.contractAddress}`);
-        }
-     
-    }
+  if (!block || !block.transactions) {
+    return;
   }
 
-  setInterval(checkForNewERC20Tokens, 100); // Check every 1 minute
+   
+  for (const tx of block.transactions) {
+    const txReceipt = await web3.eth.getTransactionReceipt(tx.hash);
 
-  console.log("Bot is running and monitoring Sepolia blockchain for new ERC20 tokens..."
-  );
+    if (tx.to === null && txReceipt.contractAddress) {
+    
+      const contractCode = await web3.eth.getCode(txReceipt.contractAddress);
+      if (contractCode !== '0x') {
+        // Fetch the contract's ABI
+        const contractABIHex = await web3.eth.getStorageAt(txReceipt.contractAddress, 0);
+  
+        // Convert the ABI from hexadecimal to a string
+        const contractABI = web3.utils.hexToAscii(contractABIHex);
+  
+        // The ABI may now be in JSON format
+        try {
+          const parsedABI = JSON.parse(contractABI);
+          console.log('Contract ABI:', parsedABI);
+        } catch (error) {
+          console.error('Error parsing contract ABI:', error);
+        }
+      }
+     
+//GET ABI
+
+      bot.sendMessage(chatId, `New ERC20 token deployed!\nContract Address: ${txReceipt.contractAddress}`);
+    }
+  }
+}
+  setInterval(checkForNewERC20Tokens, 6000); // Check every 1 minute
+
+  console.log('Bot is running and monitoring Sepolia blockchain for new ERC20 tokens...');
 });
+// bot.onText(/Track ERC20/, (msg) => {
+//   const chatId = msg.chat.id;
+//   bot.sendMessage(chatId, "Start tracking ERC20 Token deployment");
+
+//   async function checkForNewERC20Tokens() {
+//     const latestBlockNumber = await web3.eth.getBlockNumber();
+//     console.log("block",latestBlockNumber);
+//     const block = await web3.eth.getBlock(latestBlockNumber, true);
+
+//     if (!block || !block.transactions) {
+//       return;
+//     }
+
+//     // Iterate through the transactions in the latest block
+//     for (const tx of block.transactions) {
+//       const txReceipt = await web3.eth.getTransactionReceipt(tx.hash);
+
+//       let  isERC20Token = false;
+
+//    // console.log("ttest", tx.Receipt.contractAddress);  // Get the contract code
+//     const contractCode = await web3.eth.getCode(txReceipt.contractAddress);
+
+
+// // Decode the contract code into an ABI object
+//     const contractABI = JSON.parse(web3.utils.decodeABI(contractCode));
+
+     
+
+//       const ERC20TokenFunctions = ["balanceOf", "transfer","allowance","approve","totalSupply",];
+
+//       for (const functionName of ERC20TokenFunctions) {
+//         if (!contractABI.includes(functionName)) {
+//           isERC20Token = false;
+//         } else {
+//           isERC20Token = true;
+//         }
+//  }
+//  console.log("IT is ERC20", isERC20Token);
+
+//         if (tx.to === null && txReceipt.contractAddress && isERC20Token)
+//       {
+//           console.log(txReceipt.contractAddress);
+
+//           bot.sendMessage(chatId,`New ERC20 token deployed!\nContract Address: ${txReceipt.contractAddress}`);
+//         }
+     
+//     }
+//   }
+
+//   setInterval(checkForNewERC20Tokens, 1000); // Check every 1 minute
+
+//   console.log("Bot is running and monitoring Sepolia blockchain for new ERC20 tokens..."
+//   );
+// });
 
 // Handle user messages
 bot.on("message", (msg) => {
