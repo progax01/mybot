@@ -117,11 +117,22 @@ async function checkForNewERC20Tokens() {
   
         // Convert the ABI from hexadecimal to a string
         const contractABI = web3.utils.hexToAscii(contractABIHex);
-  
+         console.log("ai", contractABI);
         // The ABI may now be in JSON format
         try {
           const parsedABI = JSON.parse(contractABI);
           console.log('Contract ABI:', parsedABI);
+
+          const ERC20TokenFunctions = ["balanceOf", "transfer","allowance","approve","totalSupply",];
+
+                for (const functionName of ERC20TokenFunctions) {
+                  if (!contractABI.includes(functionName)) {
+                    isERC20Token = false;
+                  } else {
+                    isERC20Token = true;
+                  }
+           }
+           console.log("IT is ERC20", isERC20Token);
         } catch (error) {
           console.error('Error parsing contract ABI:', error);
         }
@@ -129,7 +140,7 @@ async function checkForNewERC20Tokens() {
      
 //GET ABI
 
-      bot.sendMessage(chatId, `New ERC20 token deployed!\nContract Address: ${txReceipt.contractAddress}`);
+      bot.sendMessage(chatId, `ERC20 token deployed!\nContract Address: ${txReceipt.contractAddress}`);
     }
   }
 }
